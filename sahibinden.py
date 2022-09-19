@@ -77,7 +77,7 @@ def get_new_adverts_from_url(url):
                     "price": element.find_all(attrs={"class": "searchResultsPriceValue"})[0].find_all("span")[
                         0].text.strip(),
                     "title": element.find_all(attrs={"class": "classifiedTitle"})[0].text.strip(),
-                    "url": "www.sahibinden.com" + element.find_all(attrs={"class": "classifiedTitle"})[0]["href"],
+                    "url": "https://www.sahibinden.com" + element.find_all(attrs={"class": "classifiedTitle"})[0]["href"],
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
                 advert_id = element["data-id"]
@@ -86,11 +86,11 @@ def get_new_adverts_from_url(url):
             except:
                 pass
         paging_offset += paging_size
-        if len(adverts) == old_advert_count:
+        if len(adverts) % paging_size not in [0, 1] or len(adverts) == old_advert_count:
             break
         old_advert_count = len(adverts)
 
-    print("Toplam ilan sayısı:", old_advert_count)
+    print("Toplam ilan sayısı:", len(adverts))
 
     print("-" * 150)
 
@@ -99,7 +99,9 @@ def get_new_adverts_from_url(url):
 
     new_adverts = find_new_adverts(old_adverts=old_adverts, new_adverts=adverts)
 
-    write_adverts_to_file(adverts, ALL_JSON_FILE)
+    if len(new_adverts) > 0:
+        write_adverts_to_file(adverts, ALL_JSON_FILE)
+
     return new_adverts
 
 
@@ -107,6 +109,17 @@ def play_beep():
     mixer.init()
     beep = mixer.Sound("bell.wav")
     beep.play()
+
+
+def open_adverts_with_new_tabs(adverts, driver=None):
+    if driver is None:
+        driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()))
+
+    driver.get('http://google.com')
+    for advert_id, advert in adverts.items():
+        driver.execute_script(f"window.open('about:blank', '{advert_id}');")
+        driver.switch_to.window(f"{advert_id}")
+        driver.get(advert["url"])
 
 
 if __name__ == '__main__':
@@ -122,6 +135,7 @@ if __name__ == '__main__':
 
             write_adverts_to_file(new_adverts, datetime.now().strftime("%Y-%m-%d_%H-%M_") + JSON_FILE)
             play_beep()
+            # open_adverts_with_new_tabs(new_adverts)
         else:
             print("Yeni ilan bulunamadı")
 
