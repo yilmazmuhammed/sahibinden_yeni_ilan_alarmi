@@ -100,7 +100,8 @@ def get_new_adverts_from_url(url):
     new_adverts = find_new_adverts(old_adverts=old_adverts, new_adverts=adverts)
 
     if len(new_adverts) > 0:
-        write_adverts_to_file(adverts, ALL_JSON_FILE)
+        old_adverts.update(new_adverts)
+        write_adverts_to_file(old_adverts, ALL_JSON_FILE)
 
     return new_adverts
 
